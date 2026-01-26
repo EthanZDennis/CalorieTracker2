@@ -1,18 +1,12 @@
 import express from "express";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import sharp from "sharp";
 
 const app = express();
-// Limit uploads to 10MB to save RAM
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } 
-});
+const upload = multer({ storage: multer.memoryStorage() });
 
 // --- CONFIGURATION ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-// Using the validated model from your list
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // --- THE WEBSITE UI ---
@@ -50,68 +44,60 @@ const HTML_UI = `
     
     #fileInput { display: none; }
     #status { margin-top: 12px; font-size: 14px; font-weight: 600; color: #64748b; min-height: 20px; }
-    
     .spinner { display: inline-block; width: 16px; height: 16px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; margin-right: 8px; display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-
-  <div class="header">
-    <div class="brand">CalorieHUD 🥩</div>
-  </div>
-
+  <div class="header"><div class="brand">CalorieHUD 🥩</div></div>
   <div class="tabs">
     <div class="tab active" onclick="switchUser('husband')">🇺🇸 Husband</div>
     <div class="tab" onclick="switchUser('wife')">🇯🇵 Wife</div>
   </div>
-
   <div class="grid">
-    <div class="card">
-      <div class="card-label">Daily Goal</div>
-      <div class="card-value">4000 <span class="unit">kcal</span></div>
-    </div>
-    <div class="card">
-      <div class="card-label">Weight</div>
-      <div class="card-value">143 <span class="unit">lbs</span></div>
-    </div>
+    <div class="card"><div class="card-label">Daily Goal</div><div class="card-value">4000 <span class="unit">kcal</span></div></div>
+    <div class="card"><div class="card-label">Weight</div><div class="card-value">143 <span class="unit">lbs</span></div></div>
   </div>
-
   <div class="progress-container">
     <div class="card-label">Consumed Today</div>
     <div class="card-value" id="consumedDisplay">1020 <span class="unit">kcal</span></div>
-    <div class="bar-bg">
-      <div class="bar-fill" id="progressBar"></div>
-    </div>
+    <div class="bar-bg"><div class="bar-fill" id="progressBar"></div></div>
   </div>
-
   <div class="action-area">
-    <input type="file" id="fileInput" accept="image/*" onchange="uploadPhoto()">
+    <input type="file" id="fileInput" accept="image/*" onchange="processAndUpload()">
     <button class="upload-btn" id="btnLabel" onclick="document.getElementById('fileInput').click()">
-      <div class="spinner" id="spinner"></div>
-      📸 Add Meal Photo
+      <div class="spinner" id="spinner"></div>📸 Add Meal Photo
     </button>
     <div id="status">Ready to track</div>
   </div>
 
   <script>
-    async function uploadPhoto() {
+    // --- CLIENT SIDE COMPRESSION ---
+    // This runs on your phone BEFORE uploading to save data
+    async function processAndUpload() {
       const fileInput = document.getElementById('fileInput');
       const status = document.getElementById('status');
       const btn = document.getElementById('btnLabel');
       
       if (!fileInput.files[0]) return;
+      const file = fileInput.files[0];
 
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<div class="spinner" style="display:inline-block"></div> Analyzing...';
+      // UI Update
+      btn.innerHTML = '<div class="spinner" style="display:inline-block"></div> Shrinking...';
       btn.style.opacity = "0.8";
-      status.innerText = "⏳ Compressing & Sending to AI...";
+      status.innerText = "⏳ Optimizing image for upload...";
       status.style.color = "#d97706";
 
-      const formData = new FormData();
-      formData.append("image", fileInput.files[0]);
-
       try {
+        // 1. Shrink Image in Browser
+        const resizedBlob = await shrinkImage(file);
+        
+        // 2. Upload Tiny Image
+        status.innerText = "🚀 Sending to AI...";
+        const formData = new FormData();
+        formData.append("image", resizedBlob, "meal.jpg");
+
+        // 30 Sec Timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -122,29 +108,55 @@ const HTML_UI = `
         });
         clearTimeout(timeoutId);
 
+        if (!response.ok) throw new Error("Server Error");
         const data = await response.json();
-        
         if (data.error) throw new Error(data.error);
 
+        // Success
         status.innerText = "✅ " + data.food + " added!";
         status.style.color = "#16a34a";
-        
         const current = parseInt(document.getElementById('consumedDisplay').innerText);
-        const newTotal = current + data.calories;
-        document.getElementById('consumedDisplay').innerText = newTotal + " kcal";
+        document.getElementById('consumedDisplay').innerText = (current + data.calories) + " kcal";
 
       } catch (error) {
-        if (error.name === 'AbortError') {
-          status.innerText = "❌ Network Timeout. Try a smaller photo.";
-        } else {
-          status.innerText = "❌ " + error.message;
-        }
+        status.innerText = "❌ " + (error.message || "Failed");
         status.style.color = "#dc2626";
       } finally {
         btn.innerHTML = '📸 Add Meal Photo';
         btn.style.opacity = "1";
         fileInput.value = "";
       }
+    }
+
+    function shrinkImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Resize logic: Max 800px width
+            const MAX_WIDTH = 800;
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Export as JPEG 0.7 Quality (Tiny file size)
+            canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.7);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
     function switchUser(user) {
@@ -156,20 +168,14 @@ const HTML_UI = `
 </html>
 `;
 
-// --- SERVER ROUTES ---
+// --- SERVER LOGIC ---
 app.get("/", (req, res) => res.send(HTML_UI));
 
 app.post("/log", upload.single("image"), async (req: any, res: any) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No photo" });
 
-    // Optimize
-    const optimizedBuffer = await sharp(req.file.buffer)
-      .resize(600) 
-      .jpeg({ quality: 50 })
-      .toBuffer();
-
-    // Gemini 2.5 Prompt
+    // Image is already resized by the phone, so we send it straight to Gemini
     const prompt = `
       Identify food. Estimate calories/protein. 
       CRITICAL: Hardgainer bulk -> err on lower side (subtract 15%).
@@ -178,13 +184,11 @@ app.post("/log", upload.single("image"), async (req: any, res: any) => {
 
     const result = await model.generateContent([
       prompt,
-      { inlineData: { data: optimizedBuffer.toString("base64"), mimeType: "image/jpeg" } }
+      { inlineData: { data: req.file.buffer.toString("base64"), mimeType: "image/jpeg" } }
     ]);
 
     const text = result.response.text();
-    // CLEAN FIX: Removed markdown artifacts here
     const cleanJson = text.replace(/```json|```/g, "").trim();
-    
     res.json(JSON.parse(cleanJson));
 
   } catch (error: any) {
