@@ -52,8 +52,9 @@
   </div>
 
   <div style="display:flex; gap:10px; margin-top:20px; margin-bottom:20px;">
+    <button class="btn" style="background:#fff; color:var(--primary); border:1px solid var(--primary);" id="photoBtn" onclick="document.getElementById('cameraInput').click()">📸 Photo</button>
+    <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="handlePhoto(this)">
     <button class="btn" onclick="setMode('manual')">✍️ Manual</button>
-    <button class="btn" style="background:#fff; color:var(--primary); border:1px solid var(--primary);">📸 Photo</button>
   </div>
 
   <div id="modeManual" class="card hidden">
@@ -116,6 +117,22 @@
       renderHistory(data.recentLogs);
     }
 
+    async function handlePhoto(input) {
+      if (!input.files || !input.files[0]) return;
+      const btn = document.getElementById('photoBtn');
+      const originalText = btn.innerText;
+      btn.innerText = "⌛ Analyzing...";
+      const formData = new FormData();
+      formData.append('photo', input.files[0]);
+      formData.append('user', currentUser);
+      try {
+        const res = await fetch('/api/log/photo', { method: 'POST', body: formData });
+        const data = await res.json();
+        alert(`Logged: ${data.item} (${data.calories} kcal)`);
+        loadStats();
+      } catch (err) { alert("Photo upload failed."); } finally { btn.innerText = originalText; }
+    }
+
     function renderCharts(data) {
       const labels = []; const calValues = []; const weightPoints = []; const goalLine = [];
       const tz = currentUser === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
@@ -170,7 +187,7 @@
         Object.keys(groups).sort((a,b)=>new Date(b)-new Date(a)).map(k => `
         <div style="margin-bottom:20px; border:1px solid #f1f5f9; border-radius:16px; overflow:hidden; background:white;">
           <div style="font-size:14px; font-weight:700; background:#f8fafc; padding:10px 15px; display:flex; justify-content:space-between;"><span>${k}</span><span style="color:var(--primary)">${groups[k].total} cals</span></div>
-          ${groups[k].items.map(i => `<div class="history-item"><div><b>${i.item}</b><br><small style="color:#64748b;">${i.category || 'Meal'}</small></div><div><b>${i.calories}</b> <span onclick="deleteLog('${i.id}')">🗑️</span></div></div>`).join('')}
+          ${groups[k].items.map(i => `<div class="history-item"><div><b>${i.item}</b><br><small style="color:#64748b;">${i.category || 'Meal'}</small></div><div><b>${i.calories}</b> <span style="cursor:pointer;" onclick="deleteLog('${i.id}')">🗑️</span></div></div>`).join('')}
         </div>
       `).join('');
     }
