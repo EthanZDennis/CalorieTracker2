@@ -106,15 +106,31 @@
     }
 
     async function loadStats() {
-      const res = await fetch(`/api/stats?user=${currentUser}`);
-      const data = await res.json();
-      document.getElementById('consumedDisplay').innerText = data.totalCals;
-      document.getElementById('weightDisplay').innerText = data.lastWeight || '--';
-      const pct = Math.min(100, (data.totalCals / GOALS[currentUser]) * 100);
-      document.getElementById('progressBar').style.width = pct + '%';
-      renderCharts(data);
-      renderHistory(data.recentLogs);
-    }
+  const res = await fetch(`/api/stats?user=${currentUser}`);
+  const data = await res.json();
+  
+  const consumed = data.totalCals;
+  const goal = GOALS[currentUser];
+  const remaining = Math.max(0, goal - consumed);
+  
+  // Update the Text Displays
+  document.getElementById('consumedDisplay').innerText = consumed;
+  document.getElementById('weightDisplay').innerText = data.lastWeight || '--';
+  
+  // NEW: Update the Remaining Calories Display
+  // Add an element with id="remainingDisplay" in your HTML to use this
+  if(document.getElementById('remainingDisplay')) {
+      document.getElementById('remainingDisplay').innerText = remaining + " kcal left";
+  }
+
+  // Update Progress Bar Percentage
+  const pct = Math.min(100, (consumed / goal) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  
+  renderCharts(data);
+  renderHistory(data.recentLogs);
+}
+
 
     function renderCharts(data) {
       const viewMode = document.getElementById('viewSelector').value;
