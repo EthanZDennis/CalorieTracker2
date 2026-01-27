@@ -31,33 +31,48 @@ async function loadStats() {
   renderHistory(data.recentLogs);
 }
 
-// NEW: Direct Uploader (No local resizing)
+// RESTORED: 1200px Client-Side Shrink + Removed Pop-ups
 async function handlePhoto(input) {
   if (!input.files || !input.files[0]) return;
   const btn = document.getElementById('photoBtn');
   const originalText = btn.innerText;
   
-  btn.innerText = "⌛ Uploading Original...";
+  btn.innerText = "⌛ Shrinking...";
   const file = input.files[0];
-  const formData = new FormData();
-  formData.append('photo', file); // Sending the full-quality file
-  formData.append('user', currentUser);
+  const img = new Image();
+  img.src = URL.createObjectURL(file);
 
-  try {
-    const res = await fetch('/api/log/photo', { method: 'POST', body: formData });
-    const data = await res.json();
-    
-    if (data && data.item) {
-      alert(`Logged: ${data.item} (${data.calories} kcal)`);
-      loadStats();
-    } else {
-      alert("AI analysis failed. Try another photo.");
-    }
-  } catch (err) {
-    alert("Upload error. Check server logs.");
-  } finally {
-    btn.innerText = originalText;
-  }
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const MAX_WIDTH = 1200; 
+    const scale = MAX_WIDTH / img.width;
+    canvas.width = MAX_WIDTH;
+    canvas.height = img.height * scale;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      btn.innerText = "⌛ Analyzing...";
+      const formData = new FormData();
+      formData.append('photo', blob, 'meal.jpg');
+      formData.append('user', currentUser);
+
+      try {
+        const res = await fetch('/api/log/photo', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        // Removed alert() - Dashboard updates silently
+        if (data && data.item) {
+          loadStats(); 
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+      } finally {
+        btn.innerText = originalText;
+      }
+    }, 'image/jpeg', 0.9);
+  };
 }
 
-// ... (keep your existing renderCharts, renderHistory, and submitManual functions)
+// ... (Keep your existing renderCharts, renderHistory, and submitManual functions here)
