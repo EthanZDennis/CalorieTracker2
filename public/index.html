@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CalorieHUD</title>
+  <title>CalorieHUD 2.0</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   
@@ -14,60 +14,34 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .brand { font-size: 24px; font-weight: 800; color: #1e1b4b; }
     
-    /* TABS */
     .tabs { display: flex; gap: 8px; background: #e0e7ff; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
     .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; font-weight: 600; color: #6366f1; cursor: pointer; transition: all 0.2s; }
     .tab.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: #1e1b4b; }
 
-    /* GRID & CARDS */
+    .progress-card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.05); margin-bottom: 20px; }
+
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
     .card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.05); }
     .card-label { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
     .card-value { font-size: 24px; font-weight: 800; }
-    .unit { font-size: 14px; color: #94a3b8; font-weight: 600; }
     
-    /* PROGRESS BAR CARD */
-    .progress-card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.05); margin-bottom: 20px; }
-
-    /* INPUT BUTTONS */
     .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
-    .mode-btn { flex: 1; padding: 12px; border-radius: 14px; background: #fff; text-align: center; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 2px solid transparent; transition: all 0.2s; }
+    .mode-btn { flex: 1; padding: 12px; border-radius: 14px; background: #fff; text-align: center; font-weight: 700; font-size: 15px; cursor: pointer; border: 2px solid transparent; }
     .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
 
-    input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
     .btn { background: var(--primary); color: white; width: 100%; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700; border: none; cursor: pointer; }
 
-    /* CHARTS */
     .chart-wrapper { background: white; padding: 20px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); }
-    
-    .scroll-wrapper {
-      overflow-x: auto;
-      padding-bottom: 10px;
-      -webkit-overflow-scrolling: touch; 
-    }
+    .scroll-wrapper { overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
     .wide-chart-body { height: 280px; width: 1500px; position: relative; }
     .weight-chart-body { height: 200px; position: relative; }
 
-    /* HISTORY LIST */
-    .history-section { margin-top: 30px; }
     .day-group { margin-bottom: 20px; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; background: white; }
-    .day-header { 
-      font-size: 14px; font-weight: 700; color: #475569; 
-      display: flex; justify-content: space-between; align-items: center;
-      background: #f8fafc; padding: 10px 15px; 
-    }
-    .day-total { font-size: 12px; background: white; padding: 4px 8px; border-radius: 6px; color: var(--primary); font-weight: 700; border: 1px solid #e2e8f0; }
-    .day-items { padding: 0 15px; }
-    
-    .history-item { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
-    .history-item:last-child { border-bottom: none; }
-    .history-left { display: flex; flex-direction: column; }
-    .history-name { font-weight: 600; font-size: 15px; color: #1e293b; }
-    .history-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-    .history-right { display: flex; align-items: center; gap: 12px; }
-    .cals-badge { font-weight: 700; color: #1e293b; font-size: 15px; }
+    .day-header { font-size: 14px; font-weight: 700; background: #f8fafc; padding: 10px 15px; display: flex; justify-content: space-between; }
+    .day-total { background: white; padding: 4px 8px; border-radius: 6px; color: var(--primary); font-weight: 700; border: 1px solid #e2e8f0; }
+    .history-item { display: flex; justify-content: space-between; padding: 14px 15px; border-bottom: 1px solid #f1f5f9; align-items: center; }
     .delete-btn { cursor: pointer; font-size: 18px; opacity: 0.6; }
-    .delete-btn:hover { opacity: 1; }
     .hidden { display: none; }
   </style>
 </head>
@@ -100,9 +74,8 @@
   </div>
 
   <div id="weightInputArea" class="card hidden" style="margin-bottom: 20px;">
-    <div class="card-label" style="margin-bottom:10px">Log Weight</div>
-    <input type="date" id="weightDate" style="margin-bottom: 10px;">
-    <input type="number" id="newWeight" placeholder="Weight (lbs)" style="margin-bottom: 10px;">
+    <input type="date" id="weightDate">
+    <input type="number" id="newWeight" placeholder="Weight (lbs)">
     <button class="btn" onclick="submitWeight()">Save Weight</button>
   </div>
 
@@ -121,36 +94,30 @@
 
   <div id="modeManual" class="hidden">
     <div class="card" style="margin-bottom: 20px;">
-      <div class="card-label">Log Past Meal?</div>
-      <input type="date" id="mDate" style="margin-bottom: 15px;">
-      <select id="mCategory">
-        <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Protein Shake</option>
-      </select>
-      <div class="grid" style="margin-bottom:0">
-        <input type="number" id="mCals" placeholder="Calories (Optional)">
-        <input type="number" id="mProt" placeholder="Protein (Optional)">
-      </div>
-      <button class="btn" style="margin-top:15px;" onclick="submitManual()">Log Meal</button>
+      <input type="date" id="mDate">
+      <select id="mCategory"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Protein Shake</option></select>
+      <div class="grid"><input type="number" id="mCals" placeholder="Cals"><input type="number" id="mProt" placeholder="Prot"></div>
+      <button class="btn" onclick="submitManual()">Log Meal</button>
     </div>
   </div>
 
   <div class="chart-wrapper">
-    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-        <span class="card-label">Last 30 Days 🔥</span>
-        <span style="font-size:12px; color:#94a3b8">Swipe ↔️</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span class="card-label">Calorie Trends 🔥</span>
+        <select id="viewSelector" onchange="loadStats()" style="width:auto; margin:0; padding:5px 10px; font-size:12px;">
+            <option value="rolling">Last 30 Days</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+        </select>
     </div>
     <div class="scroll-wrapper" id="scrollContainer">
-      <div class="wide-chart-body">
-        <canvas id="calChart"></canvas>
-      </div>
+      <div class="wide-chart-body"><canvas id="calChart"></canvas></div>
     </div>
   </div>
 
   <div class="chart-wrapper">
     <div class="card-label" style="margin-bottom:15px">Weight Trend 📉</div>
-    <div class="weight-chart-body">
-      <canvas id="weightChart"></canvas>
-    </div>
+    <div class="weight-chart-body"><canvas id="weightChart"></canvas></div>
   </div>
 
   <div class="history-section">
@@ -164,331 +131,149 @@
     let calChartInstance = null;
     const GOALS = { husband: 4000, wife: 2000 };
 
-    function init() { 
-      setUser('husband'); 
-    }
+    function init() { setUser('husband'); }
 
     function setUser(user) {
       currentUser = user;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.getElementById(user === 'husband' ? 'tabHusband' : 'tabWife').classList.add('active');
       document.getElementById('goalDisplay').innerText = GOALS[user];
-      
-      const tz = user === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
-      updateDatePicker(tz);
+      updateDatePicker(user === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo');
       loadStats();
     }
 
-    function getTodayForUser() {
-      const tz = currentUser === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
-      return new Date().toLocaleDateString("en-CA", { timeZone: tz });
+    function updateDatePicker(tz) {
+      const d = new Date().toLocaleDateString("en-CA", { timeZone: tz });
+      document.getElementById('mDate').value = d;
+      document.getElementById('weightDate').value = d;
     }
-
-    // Returns a date label like "Jan 14" specific to the User's Timezone
-    function getDateLabel(dateObj) {
-      const tz = currentUser === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
-      return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: tz });
-    }
-
-    function updateDatePicker(timeZone) {
-      try {
-        const dateStr = new Date().toLocaleDateString("en-CA", { timeZone: timeZone });
-        if(document.getElementById('mDate')) document.getElementById('mDate').value = dateStr;
-        if(document.getElementById('weightDate')) document.getElementById('weightDate').value = dateStr;
-      } catch (e) { 
-        const today = new Date().toISOString().split('T')[0];
-        if(document.getElementById('mDate')) document.getElementById('mDate').value = today;
-        if(document.getElementById('weightDate')) document.getElementById('weightDate').value = today;
-      }
-    }
-
-    function setMode(mode) {
-      document.getElementById('modePhoto').classList.toggle('hidden', mode !== 'photo');
-      document.getElementById('modeManual').classList.toggle('hidden', mode !== 'manual');
-      document.getElementById('btnModePhoto').classList.toggle('active', mode === 'photo');
-      document.getElementById('btnModeManual').classList.toggle('active', mode === 'manual');
-    }
-
-    function toggleWeight() { document.getElementById('weightInputArea').classList.toggle('hidden'); }
 
     async function loadStats() {
-      try {
-        const res = await fetch(`/api/stats?user=${currentUser}`);
-        const data = await res.json();
-        
-        document.getElementById('consumedDisplay').innerText = data.totalCals;
-        document.getElementById('weightDisplay').innerText = data.lastWeight || '--';
-        
-        const goal = currentUser === 'husband' ? 4000 : 2000;
-        const pct = Math.min(100, (data.totalCals / goal) * 100);
-        document.getElementById('progressBar').style.width = pct + '%';
+      const res = await fetch(`/api/stats?user=${currentUser}`);
+      const data = await res.json();
+      document.getElementById('consumedDisplay').innerText = data.totalCals;
+      document.getElementById('weightDisplay').innerText = data.lastWeight || '--';
+      const pct = Math.min(100, (data.totalCals / GOALS[currentUser]) * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
 
-        renderGroupedHistory(data.recentLogs);
-
-        if (typeof Chart !== 'undefined') {
-          // KEY CHANGE: Pass the raw logs to the chart renderer
-          // The chart will now calculate its own data from the exact same list you see below.
-          renderCalorieChart(data.recentLogs);
-          renderWeightChart(data.weightHistory || []);
-        }
-      } catch (e) { console.error("Load Stats Error:", e); }
+      renderGroupedHistory(data.recentLogs);
+      renderCharts(data);
     }
 
-    function renderGroupedHistory(logs) {
-        const list = document.getElementById('historyList');
-        if (!logs || logs.length === 0) {
-            list.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8">No history found.</div>';
-            return;
-        }
-
-        const groups = {};
-        logs.forEach(l => {
-            const d = new Date(l.timestamp);
-            const dateKey = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            if (!groups[dateKey]) { groups[dateKey] = { dateObj: d, total: 0, items: [] }; }
-            groups[dateKey].items.push(l);
-            groups[dateKey].total += parseInt(l.calories || 0);
-        });
-
-        const sortedKeys = Object.keys(groups).sort((a, b) => groups[b].dateObj - groups[a].dateObj);
-
-        let html = '';
-        sortedKeys.forEach(key => {
-            const group = groups[key];
-            html += `
-            <div class="day-group">
-                <div class="day-header">
-                    <span>${key}</span>
-                    <span class="day-total">${group.total} cals</span>
-                </div>
-                <div class="day-items">`;
-            group.items.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-            group.items.forEach(l => {
-                html += `
-                <div class="history-item">
-                    <div class="history-left">
-                        <span class="history-name">${l.item}</span>
-                        <span class="history-meta">${l.category}</span>
-                    </div>
-                    <div class="history-right">
-                        <div class="cals-badge">${l.calories}</div>
-                        <div class="delete-btn" onclick="deleteLog('${l.id}')">🗑️</div>
-                    </div>
-                </div>`;
-            });
-            html += `</div></div>`;
-        });
-        list.innerHTML = html;
-    }
-
-    // --- REWRITTEN TO USE RAW LOGS (100% Accuracy) ---
-    function renderCalorieChart(logs) {
-      const ctx = document.getElementById('calChart').getContext('2d');
-      if (calChartInstance) calChartInstance.destroy();
-
-      // 1. Calculate Daily Totals from the Logs (Client Side)
-      const dailyTotals = {};
-      logs.forEach(l => {
-         const d = new Date(l.timestamp);
-         const key = getDateLabel(d); // e.g. "Jan 14" (Uses User Timezone!)
-         if (!dailyTotals[key]) dailyTotals[key] = 0;
-         dailyTotals[key] += parseInt(l.calories || 0);
-      });
-
-      // 2. Generate Last 30 Days Labels
+    function renderCharts(data) {
+      const viewMode = document.getElementById('viewSelector').value;
       const labels = [];
-      const values = [];
-      const goalValue = GOALS[currentUser];
+      const calValues = [];
       const goalLine = [];
+      
+      let start = new Date();
+      let iterations = 30;
 
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const label = getDateLabel(d); // "Jan 14"
-        labels.push(label);
-        
-        // 3. Match directly
-        values.push(dailyTotals[label] || 0);
-        goalLine.push(goalValue);
+      if(viewMode === 'rolling') {
+        start.setDate(start.getDate() - 29);
+      } else {
+        start = new Date(2026, parseInt(viewMode), 1);
+        iterations = new Date(2026, parseInt(viewMode) + 1, 0).getDate();
       }
 
-      calChartInstance = new Chart(ctx, {
+      // 1. Process Calories
+      for(let i=0; i < iterations; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i);
+        const l = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        labels.push(l);
+        
+        const cIdx = data.chartData.labels.indexOf(l);
+        calValues.push(cIdx > -1 ? data.chartData.values[cIdx] : 0);
+        goalLine.push(GOALS[currentUser]);
+      }
+
+      // 2. Process Weight (Simplified Direct Mapping)
+      const weightPoints = (data.weightHistory || []).map(w => {
+        const p = w.x.includes('/') ? w.x.split('/') : w.x.split('-');
+        const dateObj = w.x.includes('/') ? new Date(p[2], p[0]-1, p[1]) : new Date(p[0], p[1]-1, p[2]);
+        return { x: dateObj, y: parseFloat(w.y) };
+      }).sort((a,b) => a.x - b.x);
+
+      // Render Cal Chart
+      const ctxCal = document.getElementById('calChart').getContext('2d');
+      if(calChartInstance) calChartInstance.destroy();
+      calChartInstance = new Chart(ctxCal, {
         type: 'bar',
         data: {
           labels: labels,
           datasets: [
-            {
-              type: 'line',
-              label: 'Goal',
-              data: goalLine,
-              borderColor: '#ef4444', 
-              borderWidth: 2,
-              borderDash: [6, 4], 
-              pointRadius: 0,
-              order: 1
-            },
-            {
-              label: 'Calories',
-              data: values,
-              backgroundColor: '#6366f1',
-              borderRadius: 6,
-              barThickness: 35, 
-              order: 2
-            }
+            { type: 'line', data: goalLine, borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 },
+            { data: calValues, backgroundColor: '#6366f1', borderRadius: 6, barThickness: 35 }
           ]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      // Render Weight Chart (Direct Plotting)
+      const ctxW = document.getElementById('weightChart').getContext('2d');
+      if(weightChartInstance) weightChartInstance.destroy();
+      weightChartInstance = new Chart(ctxW, {
+        type: 'line',
+        data: {
+          datasets: [{
+            data: weightPoints.map(p => ({ x: p.x.toLocaleDateString('en-US', {month:'short', day:'numeric'}), y: p.y })),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            spanGaps: true
+          }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
           plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } },
-            y: { grid: { borderDash: [4, 4], color: '#f1f5f9' }, beginAtZero: true }
+          scales: { 
+            y: { suggestedMin: (ctx) => Math.min(...weightPoints.map(p=>p.y), 100)-5 }
           }
         }
       });
       
-      setTimeout(() => {
-          const container = document.getElementById('scrollContainer');
-          container.scrollLeft = container.scrollWidth;
-      }, 100);
+      document.getElementById('scrollContainer').scrollLeft = 9999;
     }
 
-    function renderWeightChart(weightData) {
-      const ctx = document.getElementById('weightChart').getContext('2d');
-      if (weightChartInstance) weightChartInstance.destroy();
-
-      const points = weightData.map(w => {
-         let dateStr = "";
-         if (w.x.includes('/')) {
-             const p = w.x.split('/');
-             const year = p[2];
-             const month = p[0].padStart(2, '0');
-             const day = p[1].padStart(2, '0');
-             dateStr = `${year}-${month}-${day}`;
-         } else {
-             dateStr = w.x; 
-         }
-         return { x: dateStr, y: w.y };
-      }).sort((a, b) => new Date(a.x) - new Date(b.x));
-
-      weightChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          datasets: [{
-            label: 'Weight',
-            data: points,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            borderWidth: 3,
-            pointRadius: 6, 
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#10b981',
-            fill: true,
-            tension: 0.2,
-            spanGaps: true 
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { 
-              type: 'time', 
-              time: { unit: 'day', tooltipFormat: 'MMM d' },
-              grid: { display: false } 
-            },
-            y: { 
-              grid: { color: '#f1f5f9' },
-              suggestedMin: (ctx) => {
-                 if(points.length === 0) return 0;
-                 return Math.min(...points.map(p => p.y)) - 5;
-              },
-              suggestedMax: (ctx) => {
-                 if(points.length === 0) return 200;
-                 return Math.max(...points.map(p => p.y)) + 5;
-              }
-            }
-          }
-        }
+    function renderGroupedHistory(logs) {
+      const groups = {};
+      logs.forEach(l => {
+        const d = new Date(l.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        if(!groups[d]) groups[d] = { total: 0, items: [] };
+        groups[d].items.push(l); groups[d].total += parseInt(l.calories || 0);
       });
-    }
-
-    async function deleteLog(id) {
-      if(!confirm("Delete this entry?")) return;
-      await fetch(`/api/log/${id}`, { method: 'DELETE', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user: currentUser }) });
-      loadStats();
-    }
-
-    async function submitManual() {
-      const cat = document.getElementById('mCategory').value;
-      const cals = document.getElementById('mCals').value;
-      const prot = document.getElementById('mProt').value;
-      const date = document.getElementById('mDate').value;
-      const item = "Manual " + cat;
-      await fetch("/api/log/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user: currentUser, item, calories: cals, protein: prot, category: cat, date: date }) });
-      document.getElementById('mCals').value = ""; document.getElementById('mProt').value = ""; 
-      const tz = currentUser === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
-      updateDatePicker(tz);
-      loadStats(); setMode('photo');
+      document.getElementById('historyList').innerHTML = Object.keys(groups).sort((a,b)=>new Date(b)-new Date(a)).map(k => `
+        <div class="day-group"><div class="day-header"><span>${k}</span><span class="day-total">${groups[k].total}</span></div>
+        ${groups[k].items.map(i => `<div class="history-item"><div><b>${i.item}</b><br><small>${i.category}</small></div>
+        <div><b>${i.calories}</b> <span class="delete-btn" onclick="deleteLog('${i.id}')">🗑️</span></div></div>`).join('')}</div>
+      `).join('');
     }
 
     async function submitWeight() {
       const w = document.getElementById('newWeight').value;
       const d = document.getElementById('weightDate').value;
-      if(!w) return;
-      await fetch("/api/weight", { 
-          method: "POST", 
-          headers: { "Content-Type": "application/json" }, 
-          body: JSON.stringify({ user: currentUser, weight: w, date: d }) 
-      });
-      toggleWeight(); loadStats();
+      await fetch("/api/weight", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user: currentUser, weight: w, date: d }) });
+      loadStats(); toggleWeight();
     }
 
+    async function deleteLog(id) { if(confirm("Delete?")) { await fetch(`/api/log/${id}`, { method: 'DELETE', body: JSON.stringify({ user: currentUser }), headers: {'Content-Type':'application/json'} }); loadStats(); } }
+    function toggleWeight() { document.getElementById('weightInputArea').classList.toggle('hidden'); }
+    function setMode(m) { document.getElementById('modePhoto').classList.toggle('hidden', m!=='photo'); document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); }
+    async function submitManual() { 
+      const body = { user: currentUser, item: "Manual " + document.getElementById('mCategory').value, calories: document.getElementById('mCals').value, protein: document.getElementById('mProt').value, category: document.getElementById('mCategory').value, date: document.getElementById('mDate').value };
+      await fetch("/api/log/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      loadStats();
+    }
     async function uploadPhoto() {
-      const file = document.getElementById('fileInput').files[0];
-      if (!file) return;
-      const btn = document.getElementById('photoBtn');
-      const status = document.getElementById('status');
-      btn.innerText = "Analyzing..."; status.innerText = "⏳ Sending to AI...";
-      const resizedBlob = await shrinkImage(file);
-      
-      const formData = new FormData(); 
-      formData.append("image", resizedBlob); 
-      formData.append("user", currentUser);
-      
-      const correctDate = getTodayForUser();
-      formData.append("date", correctDate); 
-
-      try {
-        const res = await fetch("/api/log/photo", { method: "POST", body: formData });
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-        status.innerText = "✅ Added!"; loadStats();
-      } catch (e) { status.innerText = "❌ " + e.message; }
-      finally { btn.innerText = "Take Photo"; document.getElementById('fileInput').value = ""; }
-    }
-
-    function shrinkImage(file) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
-            const scaleSize = MAX_WIDTH / img.width;
-            canvas.width = MAX_WIDTH;
-            canvas.height = img.height * scaleSize;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(resolve, 'image/jpeg', 0.7);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
+        const f = document.getElementById('fileInput').files[0];
+        const fd = new FormData(); fd.append("image", f); fd.append("user", currentUser); fd.append("date", new Date().toLocaleDateString("en-CA", { timeZone: currentUser==='husband'?'Pacific/Honolulu':'Asia/Tokyo' }));
+        document.getElementById('status').innerText = "⏳ AI Analyzing...";
+        await fetch("/api/log/photo", { method: "POST", body: fd });
+        document.getElementById('status').innerText = "AI Ready"; loadStats();
     }
   </script>
 </body>
