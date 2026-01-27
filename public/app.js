@@ -31,15 +31,16 @@ async function loadStats() {
   renderHistory(data.recentLogs);
 }
 
+// NEW: Direct Uploader (No local resizing)
 async function handlePhoto(input) {
   if (!input.files || !input.files[0]) return;
   const btn = document.getElementById('photoBtn');
   const originalText = btn.innerText;
   
-  btn.innerText = "⌛ Uploading...";
+  btn.innerText = "⌛ Uploading Original...";
   const file = input.files[0];
   const formData = new FormData();
-  formData.append('photo', file); 
+  formData.append('photo', file); // Sending the full-quality file
   formData.append('user', currentUser);
 
   try {
@@ -50,13 +51,13 @@ async function handlePhoto(input) {
       alert(`Logged: ${data.item} (${data.calories} kcal)`);
       loadStats();
     } else {
-      alert("AI was unsure. Try another angle.");
+      alert("AI analysis failed. Try another photo.");
     }
   } catch (err) {
-    alert("Upload failed.");
+    alert("Upload error. Check server logs.");
   } finally {
     btn.innerText = originalText;
   }
 }
 
-// ... include your existing renderCharts and renderHistory functions
+// ... (keep your existing renderCharts, renderHistory, and submitManual functions)
