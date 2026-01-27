@@ -66,7 +66,7 @@
     .history-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
     .history-right { display: flex; align-items: center; gap: 12px; }
     .cals-badge { font-weight: 700; color: #1e293b; font-size: 15px; }
-    .delete-btn { cursor: pointer; font-size: 16px; opacity: 0.6; }
+    .delete-btn { cursor: pointer; font-size: 18px; opacity: 0.6; }
     .delete-btn:hover { opacity: 1; }
     .hidden { display: none; }
   </style>
@@ -100,8 +100,10 @@
   </div>
 
   <div id="weightInputArea" class="card hidden" style="margin-bottom: 20px;">
-    <input type="number" id="newWeight" placeholder="New Weight (lbs)">
-    <button class="btn" onclick="submitWeight()">Update Weight</button>
+    <div class="card-label" style="margin-bottom:10px">Log Weight</div>
+    <input type="date" id="weightDate" style="margin-bottom: 10px;">
+    <input type="number" id="newWeight" placeholder="Weight (lbs)" style="margin-bottom: 10px;">
+    <button class="btn" onclick="submitWeight()">Save Weight</button>
   </div>
 
   <div class="mode-switch">
@@ -182,11 +184,17 @@
       return new Date().toLocaleDateString("en-CA", { timeZone: tz });
     }
 
+    // Updates BOTH date pickers (Food and Weight) to the correct timezone
     function updateDatePicker(timeZone) {
       try {
         const dateStr = new Date().toLocaleDateString("en-CA", { timeZone: timeZone });
-        document.getElementById('mDate').value = dateStr;
-      } catch (e) { document.getElementById('mDate').valueAsDate = new Date(); }
+        if(document.getElementById('mDate')) document.getElementById('mDate').value = dateStr;
+        if(document.getElementById('weightDate')) document.getElementById('weightDate').value = dateStr;
+      } catch (e) { 
+        const today = new Date().toISOString().split('T')[0];
+        if(document.getElementById('mDate')) document.getElementById('mDate').value = today;
+        if(document.getElementById('weightDate')) document.getElementById('weightDate').value = today;
+      }
     }
 
     function setMode(mode) {
@@ -213,7 +221,6 @@
         renderGroupedHistory(data.recentLogs);
 
         if (typeof Chart !== 'undefined') {
-          // Pass safety checks
           renderWeightChart(data.weightHistory || []);
           renderCalorieChart(data.chartData);
         }
@@ -329,23 +336,20 @@
       }, 100);
     }
 
-    // --- WEIGHT CHART FIXED ---
     function renderWeightChart(weightData) {
       const ctx = document.getElementById('weightChart').getContext('2d');
       if (weightChartInstance) weightChartInstance.destroy();
 
-      // Convert to clean YYYY-MM-DD strings for safer parsing
       const points = weightData.map(w => {
          let dateStr = "";
          if (w.x.includes('/')) {
-             // Handle 1/26/2026 -> 2026-01-26
              const p = w.x.split('/');
              const year = p[2];
              const month = p[0].padStart(2, '0');
              const day = p[1].padStart(2, '0');
              dateStr = `${year}-${month}-${day}`;
          } else {
-             dateStr = w.x; // Already 2026-01-26
+             dateStr = w.x; 
          }
          return { x: dateStr, y: w.y };
       }).sort((a, b) => new Date(a.x) - new Date(b.x));
@@ -359,12 +363,12 @@
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             borderWidth: 3,
-            pointRadius: 6, // BIGGER DOTS TO SEE SINGLE POINTS
+            pointRadius: 6, 
             pointBackgroundColor: '#fff',
             pointBorderColor: '#10b981',
             fill: true,
             tension: 0.2,
-            spanGaps: true // Connect lines even if dates are far apart
+            spanGaps: true 
           }]
         },
         options: {
@@ -414,8 +418,13 @@
 
     async function submitWeight() {
       const w = document.getElementById('newWeight').value;
+      const d = document.getElementById('weightDate').value;
       if(!w) return;
-      await fetch("/api/weight", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user: currentUser, weight: w }) });
+      await fetch("/api/weight", { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify({ user: currentUser, weight: w, date: d }) 
+      });
       toggleWeight(); loadStats();
     }
 
