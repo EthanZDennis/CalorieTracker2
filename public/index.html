@@ -6,31 +6,39 @@
   <title>CalorieHUD 2.0</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  
   <style>
     :root { --primary: #6366f1; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --danger: #ef4444; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .brand { font-size: 24px; font-weight: 800; color: #1e1b4b; }
     .tabs { display: flex; gap: 8px; background: #e0e7ff; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
-    .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; font-weight: 700; color: #6366f1; cursor: pointer; }
-    .tab.active { background: white; color: #1e1b4b; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .progress-card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; font-weight: 600; color: #6366f1; cursor: pointer; transition: all 0.2s; }
+    .tab.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: #1e1b4b; }
+    .progress-card { background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-    .card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .card { background: var(--card); padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px -2px rgba(0,0,0,0.05); }
     .card-label { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
     .card-value { font-size: 24px; font-weight: 800; }
+    .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
+    .mode-btn { flex: 1; padding: 12px; border-radius: 14px; background: #fff; text-align: center; font-weight: 700; font-size: 15px; cursor: pointer; border: 2px solid transparent; }
+    .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
     .btn { background: var(--primary); color: white; width: 100%; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700; border: none; cursor: pointer; }
-    .chart-wrapper { background: white; padding: 20px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-    .scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chart-wrapper { background: white; padding: 20px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); }
+    .scroll-wrapper { overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
     .wide-chart-body { height: 280px; width: 1500px; position: relative; }
     .day-group { margin-bottom: 20px; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; background: white; }
-    .day-header { background: #f8fafc; padding: 10px 15px; font-weight: 700; display: flex; justify-content: space-between; font-size: 14px; }
-    .history-item { display: flex; justify-content: space-between; padding: 14px 15px; border-top: 1px solid #f1f5f9; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
+    .day-header { font-size: 14px; font-weight: 700; background: #f8fafc; padding: 10px 15px; display: flex; justify-content: space-between; }
+    .day-total { background: white; padding: 4px 8px; border-radius: 6px; color: var(--primary); font-weight: 700; border: 1px solid #e2e8f0; }
+    .history-item { display: flex; justify-content: space-between; padding: 14px 15px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+    .delete-btn { cursor: pointer; font-size: 18px; opacity: 0.6; }
     .hidden { display: none; }
   </style>
 </head>
 <body onload="init()">
-  <div style="font-size:24px; font-weight:800; color:#1e1b4b; margin-bottom:20px;">CalorieHUD 2.0</div>
-  
+  <div class="header"><div class="brand">CalorieHUD 2.0</div></div>
+
   <div class="tabs">
     <div id="tabHusband" class="tab active" onclick="setUser('husband')">🇺🇸 Husband</div>
     <div id="tabWife" class="tab" onclick="setUser('wife')">🇯🇵 Wife</div>
@@ -38,8 +46,8 @@
 
   <div class="progress-card">
     <div class="card-label">Consumed Today 🍽️</div>
-    <div class="card-value" style="color: var(--primary);" id="consumedDisplay">0</div>
-    <div style="background:#f1f5f9; height:10px; border-radius:5px; margin-top:10px; overflow:hidden;">
+    <div class="card-value" style="color: var(--primary); margin-bottom: 10px;" id="consumedDisplay">0</div>
+    <div style="background:#f1f5f9; height:10px; border-radius:5px; overflow:hidden;">
       <div id="progressBar" style="width:0%; height:100%; background:var(--primary); transition: width 0.5s;"></div>
     </div>
   </div>
@@ -51,38 +59,42 @@
     </div>
     <div class="card" onclick="toggleWeight()">
       <div class="card-label">Weight ✏️</div>
-      <div class="card-value"><span id="weightDisplay">--</span> lbs</div>
+      <div class="card-value"><span id="weightDisplay">--</span> <span style="font-size:14px; color:#94a3b8">lbs</span></div>
     </div>
   </div>
 
-  <div id="weightInputArea" class="card hidden">
+  <div id="weightInputArea" class="card hidden" style="margin-bottom: 20px;">
     <input type="date" id="weightDate">
     <input type="number" id="newWeight" placeholder="Weight (lbs)">
     <button class="btn" onclick="submitWeight()">Save Weight</button>
   </div>
 
-  <div style="display:flex; gap:10px; margin-bottom:20px;">
-    <button class="btn" onclick="setMode('photo')">📸 Photo</button>
-    <button class="btn" onclick="setMode('manual')">✍️ Manual</button>
+  <div class="mode-switch">
+    <div class="mode-btn active" id="btnModePhoto" onclick="setMode('photo')">📸 Photo</div>
+    <div class="mode-btn" id="btnModeManual" onclick="setMode('manual')">✍️ Manual</div>
   </div>
 
-  <div id="modePhoto" class="card" style="text-align:center; padding:30px">
-    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadPhoto()">
-    <button class="btn" onclick="document.getElementById('fileInput').click()">Take Photo</button>
-    <div id="status" style="margin-top:15px; font-size:14px; color:#64748b">AI Ready</div>
+  <div id="modePhoto">
+    <div class="card" style="text-align: center; padding: 30px; margin-bottom: 20px;">
+      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadPhoto()">
+      <button class="btn" onclick="document.getElementById('fileInput').click()">Take Photo</button>
+      <div id="status" style="margin-top:15px; font-size:14px; color:#64748b">AI Ready</div>
+    </div>
   </div>
 
-  <div id="modeManual" class="card hidden">
-    <input type="date" id="mDate">
-    <select id="mCategory"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
-    <input type="number" id="mCals" placeholder="Calories">
-    <button class="btn" id="logBtn" onclick="submitManual()">Log Meal</button>
+  <div id="modeManual" class="hidden">
+    <div class="card" style="margin-bottom: 20px;">
+      <input type="date" id="mDate">
+      <select id="mCategory"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Protein Shake</option></select>
+      <div class="grid"><input type="number" id="mCals" placeholder="Cals"><input type="number" id="mProt" placeholder="Prot"></div>
+      <button class="btn" id="logBtn" onclick="submitManual()">Log Meal</button>
+    </div>
   </div>
 
   <div class="chart-wrapper">
-    <div style="display:flex; justify-content:space-between; margin-bottom:15px">
-      <span style="font-weight:700">Performance 🔥</span>
-      <select id="viewSelector" onchange="loadStats()" style="width:auto; margin:0; padding:5px"><option value="rolling">Last 30 Days</option><option value="0">January</option></select>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span class="card-label">Performance 🔥</span>
+        <select id="viewSelector" onchange="loadStats()" style="width:auto; margin:0; padding:5px; font-size:12px;"><option value="rolling">Last 30 Days</option><option value="0">January</option></select>
     </div>
     <div class="scroll-wrapper" id="scrollContainer">
       <div class="wide-chart-body"><canvas id="calChart"></canvas></div>
@@ -90,7 +102,7 @@
   </div>
 
   <div class="chart-wrapper">
-    <div style="font-weight:700; margin-bottom:15px">Weight Trend 📉</div>
+    <div class="card-label" style="margin-bottom:15px">Weight Trend 📉</div>
     <div style="height:200px"><canvas id="weightChart"></canvas></div>
   </div>
 
@@ -141,7 +153,6 @@
         calValues.push(cIdx > -1 ? data.chartData.values[cIdx] : 0);
         goalLine.push(GOALS[currentUser]);
 
-        // Fix: Use Day-Only matching to find weight in Sheet
         const weightMatch = (data.weightHistory || []).find(w => {
             const cleanD = w.x.split(' ')[0];
             return new Date(cleanD).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === l;
@@ -153,7 +164,7 @@
       if(calChartInstance) calChartInstance.destroy();
       calChartInstance = new Chart(ctxCal, {
         type: 'bar',
-        data: { labels, datasets: [{ type:'line', data: goalLine, borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }, { data: calValues, backgroundColor: '#6366f1', borderRadius: 6 }] },
+        data: { labels, datasets: [{ type: 'line', data: goalLine, borderColor: '#ef4444', borderDash:[5,5], pointRadius:0 }, { data: calValues, backgroundColor: '#6366f1', borderRadius: 6, barThickness: 35 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
 
@@ -162,7 +173,7 @@
       weightChartInstance = new Chart(ctxW, {
         type: 'line',
         data: { labels, datasets: [{ data: labels.map(l => { const p = weightPoints.find(pt => pt.x === l); return p ? p.y : null; }), borderColor: '#10b981', spanGaps: true }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { suggestedMin: (ctx) => Math.min(...weightPoints.map(p=>p.y), 100)-5 }} }
       });
       document.getElementById('scrollContainer').scrollLeft = 9999;
     }
@@ -175,16 +186,18 @@
         groups[d].items.push(l); groups[d].total += parseInt(l.calories || 0);
       });
       document.getElementById('historyList').innerHTML = Object.keys(groups).sort((a,b)=>new Date(b)-new Date(a)).map(k => `
-        <div class="day-group"><div class="day-header"><span>${k}</span><span>${groups[k].total} cals</span></div>
-        ${groups[k].items.map(i => `<div class="history-item"><span>${i.item}</span><span>${i.calories}</span></div>`).join('')}</div>
+        <div class="day-group"><div class="day-header"><span>${k}</span><span class="day-total">${groups[k].total}</span></div>
+        ${groups[k].items.map(i => `<div class="history-item"><div><b>${i.item}</b><br><small>${i.category}</small></div>
+        <div><b>${i.calories}</b> <span class="delete-btn" onclick="deleteLog('${i.id}')">🗑️</span></div></div>`).join('')}</div>
       `).join('');
     }
 
     async function submitManual() {
       const btn = document.getElementById('logBtn'); btn.disabled = true;
-      const body = { user: currentUser, item: "Manual " + document.getElementById('mCategory').value, calories: document.getElementById('mCals').value, date: document.getElementById('mDate').value, category: document.getElementById('mCategory').value };
+      const body = { user: currentUser, item: "Manual " + document.getElementById('mCategory').value, calories: document.getElementById('mCals').value, protein: document.getElementById('mProt').value, date: document.getElementById('mDate').value, category: document.getElementById('mCategory').value };
       await fetch("/api/log/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      document.getElementById('modeManual').classList.add('hidden'); btn.disabled = false; loadStats();
+      document.getElementById('mCals').value = ""; document.getElementById('mProt').value = "";
+      setMode('photo'); btn.disabled = false; loadStats();
     }
 
     async function submitWeight() {
@@ -199,8 +212,14 @@
       document.getElementById('status').innerText = "AI Ready"; loadStats();
     }
 
+    async function deleteLog(id) { if(confirm("Delete?")) { await fetch(`/api/log/${id}`, { method: 'DELETE', body: JSON.stringify({ user: currentUser }), headers: {'Content-Type':'application/json'} }); loadStats(); } }
     function toggleWeight() { document.getElementById('weightInputArea').classList.toggle('hidden'); }
-    function setMode(m) { document.getElementById('modePhoto').classList.toggle('hidden', m!=='photo'); document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); }
+    function setMode(m) { 
+        document.getElementById('modePhoto').classList.toggle('hidden', m!=='photo'); 
+        document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); 
+        document.getElementById('btnModePhoto').classList.toggle('active', m==='photo');
+        document.getElementById('btnModeManual').classList.toggle('active', m==='manual');
+    }
   </script>
 </body>
 </html>
