@@ -129,7 +129,8 @@
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
+        // Boosted Resolution for Live Photo clarity
+        const MAX_WIDTH = 1800; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
@@ -145,7 +146,7 @@
             const res = await fetch('/api/log/photo', { method: 'POST', body: formData });
             const data = await res.json();
             
-            // Fixes the "undefined" bug
+            // Validation fix to prevent "undefined" error
             if (data && data.item && data.calories !== undefined) {
               alert(`Logged: ${data.item} (${data.calories} kcal)`);
               loadStats();
@@ -157,7 +158,7 @@
           } finally {
             btn.innerText = originalText;
           }
-        }, 'image/jpeg', 0.8);
+        }, 'image/jpeg', 0.92); // High quality boost for Gemini identification
       };
     }
 
@@ -221,15 +222,23 @@
     }
 
     async function submitManual() {
-      const body = { user: currentUser, item: "Manual Log", calories: document.getElementById('mCals').value, protein: document.getElementById('mProt').value, date: document.getElementById('mDate').value, category: "Manual" };
-      await fetch("/api/log/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const val = document.getElementById('mCals').value;
+      const isWeight = document.getElementById('mCals').placeholder === "Weight";
+      const body = isWeight 
+        ? { user: currentUser, weight: val, date: document.getElementById('mDate').value }
+        : { user: currentUser, item: "Manual Log", calories: val, protein: document.getElementById('mProt').value, date: document.getElementById('mDate').value, category: "Manual" };
+      
+      const endpoint = isWeight ? "/api/weight" : "/api/log/manual";
+      await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      
       document.getElementById('mCals').value = ""; document.getElementById('mProt').value = "";
+      document.getElementById('mCals').placeholder = "Cals";
       document.getElementById('modeManual').classList.add('hidden');
       loadStats();
     }
 
     async function deleteLog(id) { if(confirm("Delete?")) { await fetch(`/api/log/${id}`, { method: 'DELETE', body: JSON.stringify({ user: currentUser }), headers: {'Content-Type':'application/json'} }); loadStats(); } }
-    function setMode(m) { document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); }
+    function setMode(m) { document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); document.getElementById('mCals').placeholder="Cals"; }
     function toggleWeight() { document.getElementById('modeManual').classList.remove('hidden'); document.getElementById('mCals').placeholder="Weight"; }
   </script>
 </body>
