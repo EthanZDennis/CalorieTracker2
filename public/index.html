@@ -179,39 +179,42 @@
           list.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8">No history found.</div>';
         }
 
-        // SAFETY: Only try to build chart if library loaded
         if (typeof Chart !== 'undefined') {
           updateComboChart(data.chartData, data.weightHistory || []);
-        } else {
-          console.error("Chart.js failed to load.");
         }
       } catch (e) { console.error("Load Stats Error:", e); }
     }
 
+    // --- NEW: GENERATE A PERFECT 30-DAY TIMELINE ---
     function updateComboChart(calsData, weightData) {
       const ctx = document.getElementById('comboChart').getContext('2d');
       if (comboChart) comboChart.destroy();
 
-      // SAFETY: Generate labels safely
-      const labels = calsData.labels || [];
+      // 1. Generate Last 30 Days (Labels)
+      const labels = [];
+      const values = [];
+      const weights = [];
       
-      // SAFETY: Map weight data safely. If it errors, return nulls (empty line) instead of crashing
-      let weightValues = [];
-      try {
-        weightValues = labels.map(label => {
-          const match = weightData.find(w => {
-            // Normalize dates to strings for comparison to avoid timezone math errors
-            // Label format is usually "Jan 1"
-            // Weight format "2026-01-01"
-            if (!w.x) return false;
-            const parts = w.x.split('-'); 
-            const d = new Date(parts[0], parts[1]-1, parts[2]); // Construct safe date
-            const wLabel = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-            return wLabel === label;
-          });
-          return match ? match.y : null;
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // "Jan 26"
+        labels.push(label);
+
+        // 2. Find matching Calorie Data (or use 0)
+        const cIndex = calsData.labels.indexOf(label);
+        values.push(cIndex > -1 ? calsData.values[cIndex] : 0);
+
+        // 3. Find matching Weight Data (or null)
+        // We compare formatted dates to avoid timezone math errors
+        const weightMatch = weightData.find(w => {
+           if (!w.x) return false;
+           const parts = w.x.split('-'); // 2026-01-26
+           const wDate = new Date(parts[0], parts[1]-1, parts[2]); 
+           return wDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === label;
         });
-      } catch (e) { console.error("Weight map error", e); weightValues = new Array(labels.length).fill(null); }
+        weights.push(weightMatch ? weightMatch.y : null);
+      }
 
       comboChart = new Chart(ctx, {
         type: 'bar',
@@ -221,22 +224,22 @@
             {
               type: 'line',
               label: 'Weight',
-              data: weightValues,
+              data: weights,
               borderColor: '#10b981',
               backgroundColor: '#10b981',
               borderWidth: 3,
               pointRadius: 3,
-              spanGaps: true,
-              yAxisID: 'y1', // Explicitly link to Right Axis
+              spanGaps: true, // Connect lines over missing days
+              yAxisID: 'y1', 
               tension: 0.2
             },
             {
               type: 'bar',
               label: 'Calories',
-              data: calsData.values,
+              data: values,
               backgroundColor: 'rgba(79, 70, 229, 0.6)',
               borderRadius: 4,
-              yAxisID: 'y' // Explicitly link to Left Axis
+              yAxisID: 'y'
             }
           ]
         },
@@ -245,7 +248,10 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: true, position: 'bottom' } },
           scales: {
-            x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } }, 
+            x: { 
+              grid: { display: false }, 
+              ticks: { maxTicksLimit: 6, maxRotation: 0 } 
+            }, 
             y: { 
               beginAtZero: true, 
               position: 'left',
@@ -253,13 +259,12 @@
               title: { display: false }
             },
             y1: { 
-              type: 'linear', // MUST BE LINEAR for line chart
+              type: 'linear', 
               position: 'right',
               grid: { display: false },
-              // Smart min/max to keep line in middle
               min: function(context) {
-                  const values = context.chart.data.datasets[0].data.filter(v => v !== null);
-                  return values.length > 0 ? Math.min(...values) - 5 : 0;
+                  const vals = context.chart.data.datasets[0].data.filter(v => v !== null);
+                  return vals.length > 0 ? Math.min(...vals) - 5 : 0;
               }
             }
           }
