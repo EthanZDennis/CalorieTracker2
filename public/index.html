@@ -185,12 +185,10 @@
       } catch (e) { console.error("Load Stats Error:", e); }
     }
 
-    // --- NEW: GENERATE A PERFECT 30-DAY TIMELINE ---
     function updateComboChart(calsData, weightData) {
       const ctx = document.getElementById('comboChart').getContext('2d');
       if (comboChart) comboChart.destroy();
 
-      // 1. Generate Last 30 Days (Labels)
       const labels = [];
       const values = [];
       const weights = [];
@@ -201,16 +199,24 @@
         const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // "Jan 26"
         labels.push(label);
 
-        // 2. Find matching Calorie Data (or use 0)
         const cIndex = calsData.labels.indexOf(label);
         values.push(cIndex > -1 ? calsData.values[cIndex] : 0);
 
-        // 3. Find matching Weight Data (or null)
-        // We compare formatted dates to avoid timezone math errors
+        // --- FIXED ROBUST DATE PARSING ---
+        // Handles 2026-01-26 OR 1/26/2026
         const weightMatch = weightData.find(w => {
            if (!w.x) return false;
-           const parts = w.x.split('-'); // 2026-01-26
-           const wDate = new Date(parts[0], parts[1]-1, parts[2]); 
+           let wDate;
+           if (w.x.includes('/')) {
+             // Handle 1/26/2026 format
+             const p = w.x.split('/');
+             wDate = new Date(p[2], p[0]-1, p[1]); 
+           } else {
+             // Handle 2026-01-26 format
+             const p = w.x.split('-');
+             wDate = new Date(p[0], p[1]-1, p[2]);
+           }
+           
            return wDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === label;
         });
         weights.push(weightMatch ? weightMatch.y : null);
@@ -229,7 +235,7 @@
               backgroundColor: '#10b981',
               borderWidth: 3,
               pointRadius: 3,
-              spanGaps: true, // Connect lines over missing days
+              spanGaps: true,
               yAxisID: 'y1', 
               tension: 0.2
             },
@@ -255,15 +261,16 @@
             y: { 
               beginAtZero: true, 
               position: 'left',
-              grid: { display: false },
-              title: { display: false }
+              grid: { display: false }
             },
             y1: { 
               type: 'linear', 
               position: 'right',
               grid: { display: false },
+              // Smart Scale: Focuses on the weight range (e.g., 130-150) not 0-150
               min: function(context) {
                   const vals = context.chart.data.datasets[0].data.filter(v => v !== null);
+                  // Dynamic zoom: Lowest weight minus 5 lbs
                   return vals.length > 0 ? Math.min(...vals) - 5 : 0;
               }
             }
