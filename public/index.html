@@ -129,7 +129,6 @@
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        // REVERTED to 1200px as requested
         const MAX_WIDTH = 1200; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
@@ -146,17 +145,16 @@
             const res = await fetch('/api/log/photo', { method: 'POST', body: formData });
             const data = await res.json();
             
-            // REMOVED alerts for silent updating
-            if (data && data.item && data.calories !== undefined) {
+            if (data && data.item) {
               loadStats();
             }
           } catch (err) { 
             console.error("Upload failed silently."); 
           } finally {
             btn.innerText = originalText;
-            input.value = ''; // Clears the input so you can snap another photo immediately
+            input.value = ''; 
           }
-        }, 'image/jpeg', 0.9); 
+        }, 'image/jpeg', 0.9);
       };
     }
 
