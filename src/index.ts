@@ -19,9 +19,11 @@ app.get('/api/stats', async (req: Request, res: Response) => {
 app.post('/api/log/photo', upload.single('photo'), async (req: any, res: Response) => {
   try {
     const user = req.body.user;
-    if (!req.file) return res.status(400).json({ error: "No photo uploaded" });
+    if (!req.file) {
+        return res.status(400).json({ error: "No photo found" });
+    }
 
-    // 1. Process with Sharp: Professional-grade resizing for AI clarity
+    // Process with Sharp: Professional-grade resizing for AI clarity
     const optimizedBuffer = await sharp(req.file.buffer)
       .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 90 })
@@ -35,7 +37,7 @@ app.post('/api/log/photo', upload.single('photo'), async (req: any, res: Respons
       },
     }];
 
-    // 2. Strict AI Prompt
+    // Strict AI Prompt for Schofield Barracks / Hardgainer goals
     const prompt = `Identify food. Estimate calories/protein. 
     User: Army hardgainer (142 lbs). Rule: Err on the LOWER side for calories. 
     Respond ONLY in raw JSON: {"item": "name", "calories": 0, "protein": 0}`;
