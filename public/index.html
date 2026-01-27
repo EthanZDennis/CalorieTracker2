@@ -25,7 +25,7 @@
     .card-value { font-size: 24px; font-weight: 800; }
     .unit { font-size: 14px; color: #94a3b8; font-weight: 600; }
     
-    /* INPUT BUTTONS (Moved to Top) */
+    /* INPUT BUTTONS */
     .mode-switch { display: flex; gap: 10px; margin-bottom: 20px; }
     .mode-btn { flex: 1; padding: 12px; border-radius: 14px; background: #fff; text-align: center; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 2px solid transparent; transition: all 0.2s; }
     .mode-btn.active { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
@@ -36,15 +36,14 @@
     /* CHARTS */
     .chart-wrapper { background: white; padding: 20px; border-radius: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); }
     
-    /* SCROLLABLE CONTAINER */
     .scroll-wrapper {
       overflow-x: auto;
       padding-bottom: 10px;
-      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      -webkit-overflow-scrolling: touch; 
     }
     .wide-chart-body {
       height: 280px;
-      width: 1500px; /* FORCE WIDE WIDTH -> MAKES BARS FAT */
+      width: 1500px; 
       position: relative;
     }
     .weight-chart-body { height: 200px; position: relative; }
@@ -163,8 +162,8 @@
     const GOALS = { husband: 4000, wife: 2000 };
 
     function init() { 
-      updateDatePicker('Pacific/Honolulu');
-      loadStats(); 
+      // Initialize with correct timezone logic
+      setUser('husband'); 
     }
 
     function setUser(user) {
@@ -172,9 +171,17 @@
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.getElementById(user === 'husband' ? 'tabHusband' : 'tabWife').classList.add('active');
       document.getElementById('goalDisplay').innerText = GOALS[user];
+      
+      // FIX: Force the Date Picker (and data calculation) to use the correct timezone
       const tz = user === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
       updateDatePicker(tz);
       loadStats();
+    }
+
+    // Helper: Get correct "YYYY-MM-DD" for current user's timezone
+    function getTodayForUser() {
+      const tz = currentUser === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
+      return new Date().toLocaleDateString("en-CA", { timeZone: tz });
     }
 
     function updateDatePicker(timeZone) {
@@ -261,7 +268,6 @@
         list.innerHTML = html;
     }
 
-    // --- 1. SLIDER CALORIE CHART (With Dotted Goal Line) ---
     function renderCalorieChart(calsData) {
       const ctx = document.getElementById('calChart').getContext('2d');
       if (calChartInstance) calChartInstance.destroy();
@@ -274,7 +280,6 @@
       for (let i = 29; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        // Clean label format "Jan 26"
         const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         labels.push(label);
         
@@ -289,23 +294,21 @@
           labels: labels,
           datasets: [
             {
-              // DOTTED GOAL LINE
               type: 'line',
               label: 'Goal',
               data: goalLine,
               borderColor: '#ef4444', 
               borderWidth: 2,
-              borderDash: [6, 4], // Dotted Effect
+              borderDash: [6, 4], 
               pointRadius: 0,
               order: 1
             },
             {
-              // FAT BARS
               label: 'Calories',
               data: values,
               backgroundColor: '#6366f1',
               borderRadius: 6,
-              barThickness: 35, // Thick bars
+              barThickness: 35, 
               order: 2
             }
           ]
@@ -313,7 +316,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } }, // Hide legend for cleaner look
+          plugins: { legend: { display: false } },
           scales: {
             x: { 
               grid: { display: false },
@@ -327,14 +330,12 @@
         }
       });
       
-      // Auto-scroll to the end (Most recent day)
       setTimeout(() => {
           const container = document.getElementById('scrollContainer');
           container.scrollLeft = container.scrollWidth;
       }, 100);
     }
 
-    // --- 2. WEIGHT CHART ---
     function renderWeightChart(weightData) {
       const ctx = document.getElementById('weightChart').getContext('2d');
       if (weightChartInstance) weightChartInstance.destroy();
@@ -426,7 +427,15 @@
       const status = document.getElementById('status');
       btn.innerText = "Analyzing..."; status.innerText = "⏳ Sending to AI...";
       const resizedBlob = await shrinkImage(file);
-      const formData = new FormData(); formData.append("image", resizedBlob); formData.append("user", currentUser);
+      
+      const formData = new FormData(); 
+      formData.append("image", resizedBlob); 
+      formData.append("user", currentUser);
+      
+      // *** THE FIX: FORCE THE CORRECT DATE FOR USER'S TIMEZONE ***
+      const correctDate = getTodayForUser();
+      formData.append("date", correctDate); 
+
       try {
         const res = await fetch("/api/log/photo", { method: "POST", body: formData });
         const data = await res.json();
