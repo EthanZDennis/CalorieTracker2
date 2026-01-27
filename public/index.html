@@ -32,13 +32,25 @@
     .mode-btn.active { background: #cbd5e1; color: #0f172a; }
 
     .history-section { margin-top: 30px; }
+    
+    /* --- NEW STYLES FOR DAILY GROUPS --- */
+    .day-group { margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: white; }
+    .day-header { 
+      font-size: 15px; font-weight: 800; color: #334155; 
+      display: flex; justify-content: space-between; align-items: center;
+      background: #f1f5f9; padding: 12px 15px; 
+    }
+    .day-total { font-size: 13px; background: white; padding: 4px 10px; border-radius: 8px; color: var(--primary); font-weight: 800; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .day-items { padding: 0 15px; }
+    
     .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
+    .history-item:last-child { border-bottom: none; }
     .history-left { display: flex; flex-direction: column; }
     .history-name { font-weight: 600; font-size: 15px; }
     .history-meta { font-size: 12px; color: #64748b; }
     .history-right { display: flex; align-items: center; gap: 10px; }
-    .cals-badge { font-weight: 700; color: #0f172a; }
-    .delete-btn { color: #cbd5e1; cursor: pointer; padding: 5px; }
+    .cals-badge { font-weight: 600; color: #64748b; font-size: 14px; }
+    .delete-btn { color: #cbd5e1; cursor: pointer; padding: 8px; }
     .delete-btn:hover { color: var(--danger); }
     .hidden { display: none; }
   </style>
@@ -108,7 +120,7 @@
     <div class="card-label" style="margin-bottom: 10px;">30-Day Performance</div>
     <div class="chart-container"><canvas id="comboChart"></canvas></div>
 
-    <div class="card-label" style="margin-bottom: 10px;">Recent History</div>
+    <div class="card-label" style="margin-bottom: 10px;">History (Grouped by Day)</div>
     <div id="historyList"></div>
   </div>
 
@@ -159,30 +171,81 @@
         const pct = Math.min(100, (data.totalCals / goal) * 100);
         document.getElementById('progressBar').style.width = pct + '%';
 
-        const list = document.getElementById('historyList');
-        if (data.recentLogs && data.recentLogs.length > 0) {
-          list.innerHTML = data.recentLogs.map(l => {
-            const dateStr = new Date(l.timestamp).toLocaleDateString();
-            return `
-            <div class="history-item">
-              <div class="history-left">
-                <span class="history-name">${l.item}</span>
-                <span class="history-meta">${dateStr} • ${l.category}</span>
-              </div>
-              <div class="history-right">
-                <div class="cals-badge">${l.calories}</div>
-                <div class="delete-btn" onclick="deleteLog('${l.id}')">🗑️</div>
-              </div>
-            </div>`;
-          }).join('');
-        } else {
-          list.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8">No history found.</div>';
-        }
+        // --- NEW: CALL THE GROUPED RENDERER ---
+        renderGroupedHistory(data.recentLogs);
 
         if (typeof Chart !== 'undefined') {
           updateComboChart(data.chartData, data.weightHistory || []);
         }
       } catch (e) { console.error("Load Stats Error:", e); }
+    }
+
+    // --- NEW LOGIC: GROUPS MEALS BY DAY ---
+    function renderGroupedHistory(logs) {
+        const list = document.getElementById('historyList');
+        if (!logs || logs.length === 0) {
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8">No history found.</div>';
+            return;
+        }
+
+        // 1. Group items by Date String
+        const groups = {};
+        logs.forEach(l => {
+            const d = new Date(l.timestamp);
+            const dateKey = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); // "Jan 26, 2026"
+            
+            if (!groups[dateKey]) {
+                groups[dateKey] = {
+                    dateObj: d, // Store actual date for sorting later
+                    total: 0,
+                    items: []
+                };
+            }
+            groups[dateKey].items.push(l);
+            groups[dateKey].total += parseInt(l.calories || 0);
+        });
+
+        // 2. Sort the Groups by Date (Newest First)
+        const sortedKeys = Object.keys(groups).sort((a, b) => {
+            return groups[b].dateObj - groups[a].dateObj;
+        });
+
+        // 3. Build the HTML
+        let html = '';
+        sortedKeys.forEach(key => {
+            const group = groups[key];
+            
+            // The Header: Shows Date and TOTAL Calories
+            html += `
+            <div class="day-group">
+                <div class="day-header">
+                    <span>📅 ${key}</span>
+                    <span class="day-total">${group.total} cals</span>
+                </div>
+                <div class="day-items">`;
+
+            // The Items: Listed below the header
+            // (Sorting items newest-to-oldest within the day)
+            group.items.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            group.items.forEach(l => {
+                html += `
+                <div class="history-item">
+                    <div class="history-left">
+                        <span class="history-name">${l.item}</span>
+                        <span class="history-meta">${l.category}</span>
+                    </div>
+                    <div class="history-right">
+                        <div class="cals-badge">${l.calories}</div>
+                        <div class="delete-btn" onclick="deleteLog('${l.id}')">🗑️</div>
+                    </div>
+                </div>`;
+            });
+            
+            html += `</div></div>`; // Close group div
+        });
+
+        list.innerHTML = html;
     }
 
     function updateComboChart(calsData, weightData) {
@@ -196,28 +259,27 @@
       for (let i = 29; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // "Jan 26"
-        labels.push(label);
+        d.setHours(12, 0, 0, 0); 
+        
+        const labelStr = d.toDateString(); 
+        const displayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        labels.push(displayLabel);
 
-        const cIndex = calsData.labels.indexOf(label);
+        const cIndex = calsData.labels.indexOf(displayLabel);
         values.push(cIndex > -1 ? calsData.values[cIndex] : 0);
 
-        // --- FIXED ROBUST DATE PARSING ---
-        // Handles 2026-01-26 OR 1/26/2026
         const weightMatch = weightData.find(w => {
            if (!w.x) return false;
            let wDate;
            if (w.x.includes('/')) {
-             // Handle 1/26/2026 format
              const p = w.x.split('/');
-             wDate = new Date(p[2], p[0]-1, p[1]); 
+             wDate = new Date(p[2], p[0]-1, p[1], 12, 0, 0, 0); 
            } else {
-             // Handle 2026-01-26 format
              const p = w.x.split('-');
-             wDate = new Date(p[0], p[1]-1, p[2]);
+             wDate = new Date(p[0], p[1]-1, p[2], 12, 0, 0, 0);
            }
-           
-           return wDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === label;
+           return wDate.toDateString() === labelStr;
         });
         weights.push(weightMatch ? weightMatch.y : null);
       }
@@ -254,23 +316,12 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: true, position: 'bottom' } },
           scales: {
-            x: { 
-              grid: { display: false }, 
-              ticks: { maxTicksLimit: 6, maxRotation: 0 } 
-            }, 
-            y: { 
-              beginAtZero: true, 
-              position: 'left',
-              grid: { display: false }
-            },
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 6, maxRotation: 0 } }, 
+            y: { beginAtZero: true, position: 'left', grid: { display: false } },
             y1: { 
-              type: 'linear', 
-              position: 'right',
-              grid: { display: false },
-              // Smart Scale: Focuses on the weight range (e.g., 130-150) not 0-150
+              type: 'linear', position: 'right', grid: { display: false },
               min: function(context) {
                   const vals = context.chart.data.datasets[0].data.filter(v => v !== null);
-                  // Dynamic zoom: Lowest weight minus 5 lbs
                   return vals.length > 0 ? Math.min(...vals) - 5 : 0;
               }
             }
