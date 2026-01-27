@@ -47,11 +47,18 @@ export async function getStats(user: string) {
   const userRows = rows1.filter(r => r.get('User').toLowerCase() === user.toLowerCase());
   const weightRows = rows2.filter(r => r.get('User').toLowerCase() === user.toLowerCase());
 
+  // FIX: Create a robust "Today" string that matches the sheet's format
   const tz = user.toLowerCase() === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
-  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: tz }); 
+  const now = new Date();
+  const todayTarget = now.toLocaleDateString("en-CA", { timeZone: tz }); 
   
+  // Summing today's calories by checking for exact string match OR date-parsed match
   const todayCals = userRows
-    .filter(r => r.get('Date') === todayStr)
+    .filter(r => {
+        const rowDate = r.get('Date');
+        // Matches if string is identical (2026-01-26) OR if they represent the same day
+        return rowDate === todayTarget || new Date(rowDate).toLocaleDateString("en-CA") === todayTarget;
+    })
     .reduce((sum, r) => sum + parseInt(r.get('Calories') || 0), 0);
 
   return {
