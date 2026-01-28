@@ -57,6 +57,12 @@
     <button class="btn" onclick="setMode('manual')">✍️ Manual</button>
   </div>
 
+  <div id="modeWeight" class="card hidden">
+    <input type="date" id="wDate">
+    <input type="number" id="wVal" placeholder="Weight (lbs)" step="0.1">
+    <button class="btn" style="background:#10b981;" onclick="submitWeight()">Log Weight</button>
+  </div>
+
   <div id="modeManual" class="card hidden">
     <input type="date" id="mDate">
     <div class="grid"><input type="number" id="mCals" placeholder="Cals"><input type="number" id="mProt" placeholder="Prot"></div>
@@ -217,25 +223,47 @@
       `).join('');
     }
 
+    // Surgical Fix: Independent Weight Submission
+    async function submitWeight() {
+      const weightVal = document.getElementById('wVal').value;
+      const dateVal = document.getElementById('wDate').value;
+      if (!weightVal) return;
+
+      const body = { user: currentUser, weight: weightVal, date: dateVal };
+      await fetch("/api/weight", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      
+      document.getElementById('wVal').value = "";
+      document.getElementById('modeWeight').classList.add('hidden');
+      loadStats();
+    }
+
     async function submitManual() {
       const val = document.getElementById('mCals').value;
-      const isWeight = document.getElementById('mCals').placeholder === "Weight";
-      const body = isWeight 
-        ? { user: currentUser, weight: val, date: document.getElementById('mDate').value }
-        : { user: currentUser, item: "Manual Log", calories: val, protein: document.getElementById('mProt').value, date: document.getElementById('mDate').value, category: "Manual" };
+      const prot = document.getElementById('mProt').value;
+      const date = document.getElementById('mDate').value;
+
+      const body = { user: currentUser, item: "Manual Log", calories: val, protein: prot, date: date, category: "Manual" };
+      await fetch("/api/log/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       
-      const endpoint = isWeight ? "/api/weight" : "/api/log/manual";
-      await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      
-      document.getElementById('mCals').value = ""; document.getElementById('mProt').value = "";
-      document.getElementById('mCals').placeholder = "Cals";
+      document.getElementById('mCals').value = ""; 
+      document.getElementById('mProt').value = "";
       document.getElementById('modeManual').classList.add('hidden');
       loadStats();
     }
 
     async function deleteLog(id) { if(confirm("Delete?")) { await fetch(`/api/log/${id}`, { method: 'DELETE', body: JSON.stringify({ user: currentUser }), headers: {'Content-Type':'application/json'} }); loadStats(); } }
-    function setMode(m) { document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); document.getElementById('mCals').placeholder="Cals"; }
-    function toggleWeight() { document.getElementById('modeManual').classList.remove('hidden'); document.getElementById('mCals').placeholder="Weight"; }
+    
+    function setMode(m) { 
+      document.getElementById('modeWeight').classList.add('hidden');
+      document.getElementById('modeManual').classList.toggle('hidden', m!=='manual'); 
+    }
+
+    function toggleWeight() { 
+      document.getElementById('modeManual').classList.add('hidden');
+      document.getElementById('modeWeight').classList.toggle('hidden'); 
+      const tz = currentUser === 'husband' ? 'Pacific/Honolulu' : 'Asia/Tokyo';
+      document.getElementById('wDate').value = new Date().toLocaleDateString("en-CA", { timeZone: tz });
+    }
   </script>
 </body>
 </html>
