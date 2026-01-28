@@ -127,7 +127,6 @@
       renderHistory(data.recentLogs);
     }
 
-    // Surgical Fix: MAX_WIDTH increased to 1600 for better AI food recognition
     async function handlePhoto(input) {
       if (!input.files || !input.files[0]) return;
       const btn = document.getElementById('photoBtn');
@@ -144,7 +143,7 @@
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1600; // Updated from 1200 to 1600
+        const MAX_WIDTH = 2000; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
@@ -173,8 +172,9 @@
                 status.innerText = `✅ Logged: ${resp.item} (${resp.calories} kcal)`;
                 status.style.color = "#10b981";
               } else {
-                status.innerText = "❌ AI couldn't find food data.";
+                status.innerText = "❌ AI failed. Separate food and use top-down angle.";
                 status.style.color = "#ef4444";
+                alert("The AI couldn't distinguish the items. Make sure your food isn't touching and use a direct top-down angle.");
               }
               loadStats();
             } else {
