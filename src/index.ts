@@ -28,7 +28,9 @@ app.post('/api/log/photo', upload.single('photo'), async (req: any, res: Respons
     }];
 
     const prompt = `Identify food. Estimate calories/protein. 
-    User: Army hardgainer (142 lbs). Rule: Err on the LOWER side for calories. 
+    User: Army hardgainer (142 lbs). Rule 1: Food will be touching or overlapping; guess the separate items anyway.
+    Rule 2: You MUST provide an estimate. Do not say you are unsure.
+    Rule 3: Err on the LOWER side for calories. 
     Respond ONLY in raw JSON: {"item": "name", "calories": 0, "protein": 0}`;
     
     const result = await model.generateContent([prompt, ...imageParts]);
