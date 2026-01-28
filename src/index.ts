@@ -37,8 +37,8 @@ app.post('/api/log/photo', upload.single('photo'), async (req: any, res: Respons
     const response = await result.response;
     const rawText = response.text();
 
-    // Surgical Fix: Use regex to find JSON brackets so extra AI text doesn't crash the app
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    // Surgical Fix: Stop at the first closing bracket to prevent SyntaxErrors
+    const jsonMatch = rawText.match(/\{[\s\S]*?\}/);
     
     if (!jsonMatch) {
       // Surgical Fix: If no JSON, send the raw AI text to the UI as an error
