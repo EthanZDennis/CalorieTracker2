@@ -24,6 +24,7 @@
     .history-item { display: flex; justify-content: space-between; padding: 14px 15px; border-bottom: 1px solid #f1f5f9; align-items: center; }
     .hidden { display: none; }
     input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 10px; box-sizing: border-box; }
+    #statusLabel { font-size: 12px; font-weight: 700; margin-top: 10px; text-align: center; color: #64748b; }
   </style>
 </head>
 <body onload="init()">
@@ -51,10 +52,13 @@
     <div class="card" onclick="toggleWeight()"><div class="card-label">Weight ✏️</div><div class="card-value"><span id="weightDisplay">--</span> lbs</div></div>
   </div>
 
-  <div style="display:flex; gap:10px; margin-top:20px; margin-bottom:20px;">
-    <button class="btn" style="background:#fff; color:var(--primary); border:1px solid var(--primary);" id="photoBtn" onclick="document.getElementById('cameraInput').click()">📸 Photo</button>
-    <input type="file" id="cameraInput" accept="image/*" style="display:none" onchange="handlePhoto(this)">
-    <button class="btn" onclick="setMode('manual')">✍️ Manual</button>
+  <div style="display:flex; flex-direction:column; margin-top:20px; margin-bottom:20px;">
+    <div style="display:flex; gap:10px;">
+      <button class="btn" style="background:#fff; color:var(--primary); border:1px solid var(--primary);" id="photoBtn" onclick="document.getElementById('cameraInput').click()">📸 Photo</button>
+      <input type="file" id="cameraInput" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+      <button class="btn" onclick="setMode('manual')">✍️ Manual</button>
+    </div>
+    <div id="statusLabel">Ready to log...</div>
   </div>
 
   <div id="modeWeight" class="card hidden">
@@ -123,11 +127,16 @@
       renderHistory(data.recentLogs);
     }
 
+    // UPDATED handlePhoto with progress tracking and error reporting
     async function handlePhoto(input) {
       if (!input.files || !input.files[0]) return;
       const btn = document.getElementById('photoBtn');
+      const status = document.getElementById('statusLabel');
       const originalText = btn.innerText;
-      btn.innerText = "⌛ Shrinking...";
+      
+      status.innerText = "⌛ Shrinking image...";
+      status.style.color = "#64748b";
+      btn.innerText = "⌛ ...";
 
       const file = input.files[0];
       const img = new Image();
@@ -143,23 +152,48 @@
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         canvas.toBlob(async (blob) => {
-          btn.innerText = "⌛ Analyzing...";
           const formData = new FormData();
           formData.append('photo', blob, 'shrunk.jpg');
           formData.append('user', currentUser);
-          try {
-            const res = await fetch('/api/log/photo', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data && data.item) {
-              loadStats();
+
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/log/photo', true);
+
+          // Track upload progress
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const pct = Math.round((e.loaded / e.total) * 100);
+              status.innerText = `📤 Uploading: ${pct}%`;
             }
-          } catch (err) { 
-            console.error("Upload failed silently."); 
-          } finally {
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const resp = JSON.parse(xhr.responseText);
+              if (resp.item) {
+                status.innerText = `✅ Logged: ${resp.item} (${resp.calories} kcal)`;
+                status.style.color = "#10b981";
+              } else {
+                status.innerText = "❌ AI couldn't find food data.";
+                status.style.color = "#ef4444";
+              }
+              loadStats();
+            } else {
+              status.innerText = `❌ Server Error: ${xhr.status}`;
+              status.style.color = "#ef4444";
+            }
             btn.innerText = originalText;
-            input.value = ''; 
-          }
+            input.value = '';
+          };
+
+          xhr.onerror = () => {
+            status.innerText = "❌ Network error. Check connection.";
+            status.style.color = "#ef4444";
+            btn.innerText = originalText;
+          };
+
+          status.innerText = "⌛ AI Analyzing...";
+          xhr.send(formData);
         }, 'image/jpeg', 0.9);
       };
     }
@@ -223,7 +257,6 @@
       `).join('');
     }
 
-    // Surgical Fix: Independent Weight Submission
     async function submitWeight() {
       const weightVal = document.getElementById('wVal').value;
       const dateVal = document.getElementById('wDate').value;
